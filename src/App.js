@@ -9,36 +9,35 @@ const INDICATOR_keys = Object.keys(INDICATORS);
 
 function App() {
   const [symbol, setSymbol] = useState('AAPL');
-  const [indicatorKey, setIndicatorKey] = useState(INDICATOR_keys[0]);
-  const [plotData, setPlotData] = useState([]);
-  const [plotLayout, setPlotLayout] = useState({});
+  const [report, setReport] = useState(null);
 
   useEffect(() => {
     fetch(`/reports/${symbol}.csv`).then(res => res.text())
       .then(csvString => {
         const data = d3.csvParse(csvString, d3.autoType);
-        const indicator = INDICATORS[indicatorKey];
-        setPlotData(indicator.makePlotData(data));
-        setPlotLayout(indicator.makePlotLayout());
+        setReport(data);
       })
-  }, [symbol, indicatorKey])
+  }, [symbol])
 
   return (
-    <div className="App">
-      <select value={indicatorKey} onChange={evt => setIndicatorKey(evt.target.value)}>
-        {INDICATOR_keys.map(key => <option key={key} value={key}>{INDICATORS[key].name}</option>)}
-      </select>
-
+    <div className="container-fluid">
       <select value={symbol} onChange={evt => setSymbol(evt.target.value)}>
         {SYMBOLS.map(symbol => <option key={symbol}>{symbol}</option>)}
       </select>
 
-      <Plot
-        data={plotData}
-        layout={plotLayout}
-        useResizeHandler={true}
-        style={PLOT_STYLE}
-      />
+      <div className="row">
+        {INDICATOR_keys.map(key => {
+          const indicator = INDICATORS[key];
+          return <div className="col-12 col-md-6 p-0">
+            <Plot
+              data={indicator.makePlotData(report || [])}
+              layout={indicator.makePlotLayout()}
+              useResizeHandler={true}
+              style={PLOT_STYLE}
+            />
+          </div>
+        })}
+      </div>
     </div>
   );
 }
