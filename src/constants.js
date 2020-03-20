@@ -43,7 +43,7 @@ export const INDICATORS = {
         },
         makePlotLayout: () => {
             return {
-                title: 'Return On Assets',
+                title: 'Management Efficiency',
                 xaxis: {rangeslider: true,},
                 yaxis2: { overlaying: 'y', side: 'right' },
             }
