@@ -26,23 +26,38 @@ const config = {
     measurementId: "G-22MLMFL1F9"
 };
 firebase.initializeApp(config);
-var database = firebase.database();
+
+// const fs = require('fs')
+// fs.readdir('./jsons', (err, files) => {
+//     files
+//         .filter(fname => fname.includes('.json'))
+//         .forEach(fname => {
+//             fs.readFile(`./jsons/${fname}`, (err, buffer) => {
+//                 const json = JSON.parse(buffer.toString())
+//                 const symbol = fname.replace(".json", "").replace(".", "_")
+//                 firebase.database().ref('symbols/' + symbol).set(json)
+//                     .then(() => {
+//                         console.log(`OK: ${symbol}`);
+//                     })
+//                     .catch(err => {
+//                         console.log(`ERR: ${symbol}`, err);
+//                     })
+//             })
+//         })
+// })
+
 
 const fs = require('fs')
-fs.readdir('./jsons', (err, files) => {
-    files
-        .filter(fname => fname.includes('.json'))
-        .forEach(fname => {
-            fs.readFile(`./jsons/${fname}`, (err, buffer) => {
-                const json = JSON.parse(buffer.toString())
-                const symbol = fname.replace(".json", "").replace(".", "_")
-                firebase.database().ref('symbols/' + symbol).set(json)
-                    .then(() => {
-                        console.log(`OK: ${symbol}`);
-                    })
-                    .catch(err => {
-                        console.log(`ERR: ${symbol}`, err);
-                    })
-            })
-        })
+fs.readFile('./src/symbols.json', (err, buffer) => {
+    const symbols = JSON.parse(buffer.toString())
+    symbols.filter(sym => sym.includes('.HK'))
+        .forEach(sym => {
+            firebase.database().ref(`symbols/${sym.replace('.', '_')}`).remove()
+                .then(() => {
+                    console.log(`Removed ${sym}`)
+                })
+                .catch(() => {
+                    console.log(`Err: ${sym}`)
+                })
+        });
 })
