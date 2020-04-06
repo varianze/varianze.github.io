@@ -109,11 +109,11 @@ function App() {
                         if (data) {
                             return <tr key={symbol}>
                                 <th onClick={() => showStockModal(symbol)}>{symbol}</th>
-                                <td>{d3.mean(ratios.profitMargin(data)).toFixed(1)}</td>
-                                <td>{d3.mean(ratios.roe(data)).toFixed(1)}</td>
-                                <td>{d3.mean(ratios.currentRatio(data)).toFixed(1)}</td>
-                                <td>{d3.mean(ratios.payoutRatio(data)).toFixed(1)}</td>
-                                <td>{d3.mean(ratios.dilutedEPS(data)).toFixed(1)}</td>
+                                <td>{mean(ratios.profitMargin(data))}</td>
+                                <td>{mean(ratios.roe(data))}</td>
+                                <td>{mean(ratios.currentRatio(data))}</td>
+                                <td>{mean(ratios.payoutRatio(data))}</td>
+                                <td>{mean(ratios.dilutedEPS(data))}</td>
                             </tr>
                         } else {
                             return <tr key={symbol}>
@@ -222,4 +222,12 @@ function RatioPlot({
 
 function getSymbols(sector) {
     return Array.from(new Set(SYMBOL_SECTOR[sector]));
+}
+
+function mean(values) {
+    const result = d3.mean(values);
+    if (result === undefined) {
+        return 'NA';
+    }
+    return result.toFixed(1);
 }
