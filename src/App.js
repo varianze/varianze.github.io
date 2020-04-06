@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import * as d3 from 'd3';
 import lodash from 'lodash';
-import { FaSortNumericDown, FaSortNumericUp } from "react-icons/fa";
+import { FaSortNumericDown, FaSortNumericUp, FaExternalLinkAlt } from "react-icons/fa";
 import { Modal, Dropdown } from "react-bootstrap";
 import Plot from 'react-plotly.js';
 import moment from "moment";
@@ -131,7 +131,11 @@ function App() {
 
             {reportBySymbol[symbol] && <Modal show={isModalShow} onHide={closeStockModal} scrollable size="lg">
                 <Modal.Header closeButton>
-                    <Modal.Title>{symbol}</Modal.Title>
+                    <Modal.Title>
+                        <a className="d-flex align-items-center" href={`https://finance.yahoo.com/chart/${symbol}`} target="_blank">
+                            {symbol} <FaExternalLinkAlt className="ml-2"/>
+                        </a>
+                    </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <RatioPlot
