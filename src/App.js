@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import * as d3 from 'd3';
 import { FaSortNumericDown, FaSortNumericUp } from "react-icons/fa";
+import { Modal } from "react-bootstrap";
+import Plot from 'react-plotly.js';
+import moment from "moment";
 import symbolBySectors from "./symbolsBySector.json";
 
 const TECH_SYMBOLS = Array.from(new Set(symbolBySectors['technology']));
@@ -18,35 +21,12 @@ const ratios = {
     dilutedEPS,
 }
 
-
-function StockRow({ symbol, data }) {
-    if (data) {
-        return <tr>
-            <th>{symbol}</th>
-            <td>{d3.mean(ratios.profitMargin(data)).toFixed(1)}</td>
-            <td>{d3.mean(ratios.roe(data)).toFixed(1)}</td>
-            <td>{d3.mean(ratios.currentRatio(data)).toFixed(1)}</td>
-            <td>{d3.mean(ratios.payoutRatio(data)).toFixed(1)}</td>
-            <td>{d3.mean(ratios.dilutedEPS(data)).toFixed(1)}</td>
-        </tr>
-    } else {
-        return <tr>
-            <td>Loading..</td>
-            <td>Loading..</td>
-            <td>Loading..</td>
-            <td>Loading..</td>
-            <td>Loading..</td>
-            <td>Loading..</td>
-        </tr>
-    }
-
-}
-
-
 function App() {
     const [reportBySymbol, setReportBySymbol] = useState({});
     const [sortBy, setSortBy] = useState('profitMargin');
     const [isAscend, setIsAscend] = useState(false);
+    const [isModalShow, setShowModal] = useState(false);
+    const [symbol, setSymbol] = useState(null);
 
     useEffect(() => {
         TECH_SYMBOLS.forEach(symbol => {
@@ -57,7 +37,6 @@ function App() {
                 .then(res => res.text())
                 .then(csvString => {
                     let data = d3.csvParse(csvString, d3.autoType);
-                    data = data.slice(data.length - 5, data.length);
                     setReportBySymbol(prevState => ({ ...prevState, [symbol]: data }));
                 });
         })
@@ -76,6 +55,15 @@ function App() {
     const sortIcon = by => by === sortBy ?
         isAscend ? <FaSortNumericUp /> : <FaSortNumericDown /> :
         null;
+
+    const closeStockModal = () => {
+        setShowModal(false);
+        setSymbol(null);
+    }
+    const showStockModal = (symbol) => {
+        setShowModal(true);
+        setSymbol(symbol)
+    }
 
     return <div className="container">
         <h3 className="mb-3">Technology Sector</h3>
@@ -99,12 +87,118 @@ function App() {
                         const sign = isAscend ? -1 : 1;
                         return sign * (d3.mean(f(dataB)) - d3.mean(f(dataA)))
                     }).map(symbol => {
-                        return <StockRow symbol={symbol} key={symbol} data={reportBySymbol[symbol]} />
+                        let data = reportBySymbol[symbol];
+                        data = data.slice(data.length - 5 + 1, data.length)
+                        if (data) {
+                            return <tr key={symbol}>
+                                <th onClick={() => showStockModal(symbol)}>{symbol}</th>
+                                <td>{d3.mean(ratios.profitMargin(data)).toFixed(1)}</td>
+                                <td>{d3.mean(ratios.roe(data)).toFixed(1)}</td>
+                                <td>{d3.mean(ratios.currentRatio(data)).toFixed(1)}</td>
+                                <td>{d3.mean(ratios.payoutRatio(data)).toFixed(1)}</td>
+                                <td>{d3.mean(ratios.dilutedEPS(data)).toFixed(1)}</td>
+                            </tr>
+                        } else {
+                            return <tr key={symbol}>
+                                <td>Loading..</td>
+                                <td>Loading..</td>
+                                <td>Loading..</td>
+                                <td>Loading..</td>
+                                <td>Loading..</td>
+                                <td>Loading..</td>
+                            </tr>
+                        }
                     })}
                 </tbody>
             </table>
+
+            {reportBySymbol[symbol] && <Modal show={isModalShow} onHide={closeStockModal} scrollable size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>{symbol}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <RatioPlot
+                        report={reportBySymbol[symbol]}
+                        title="Profit Margin"
+                        key1="annualNetIncome"
+                        name1="Net Income"
+                        key2="annualTotalRevenue"
+                        name2="Total Revenue"
+                    />
+                    <RatioPlot
+                        report={reportBySymbol[symbol]}
+                        title="Return On Equity"
+                        key1="annualNetIncome"
+                        name1="Net Income"
+                        key2="annualStockholdersEquity"
+                        name2="Stockholder's Equity"
+                    />
+                    <RatioPlot
+                        report={reportBySymbol[symbol]}
+                        title="Current Ratio"
+                        key1="annualCurrentAssets"
+                        name1="Current Assets"
+                        key2="annualCurrentLiabilities"
+                        name2="Current Liabilities"
+                        factor={1}
+                        y2range={[0, 5]}
+                    />
+                    <RatioPlot
+                        report={reportBySymbol[symbol]}
+                        title="Payout Ratio"
+                        key1="annualCashDividendsPaid"
+                        name1="Cash Dividends Paid"
+                        key2="annualNetIncome"
+                        name2="Net Income"
+                        key1factor={-1}
+                    />
+                </Modal.Body>
+            </Modal>}
         </div>
     </div>
 }
 
 export default App;
+
+function RatioPlot({
+    report,
+    title,
+    key1, name1,
+    key2, name2,
+    factor=100,
+    key1factor=1,
+    y2range=[0, 100]
+}) {
+    const dates = report.map(dat => moment(dat['date']).year());
+
+    return <Plot
+        data={[
+            {
+                x: dates,
+                y: report.map(dat => key1factor * dat[key1]),
+                name: name1,
+                type: 'bar',
+            },
+            {
+                x: dates,
+                y: report.map(dat => dat[key2]),
+                name: name2,
+                type: 'bar',
+            },
+            {
+                x: dates,
+                y: report.map(dat => factor * key1factor * dat[key1] / dat[key2]),
+                name: title,
+                yaxis: 'y2',
+            }
+        ]}
+        useResizeHandler
+        style={{width: '100%',  height: '100%'}}
+        layout={{
+            autosize: true,
+            title,
+            yaxis2: { overlaying: 'y', side: 'right', range: y2range },
+            legend: {"orientation": "h"}
+        }}
+    />
+}
