@@ -132,7 +132,7 @@ function App() {
             {reportBySymbol[symbol] && <Modal show={isModalShow} onHide={closeStockModal} scrollable size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>
-                        <a className="d-flex align-items-center" href={`https://finance.yahoo.com/chart/${symbol}`} target="_blank">
+                        <a className="d-flex align-items-center" href={`https://finance.yahoo.com/chart/${symbol}`} target="_blank" rel="noopener noreferrer">
                             {symbol} <FaExternalLinkAlt className="ml-2"/>
                         </a>
                     </Modal.Title>
