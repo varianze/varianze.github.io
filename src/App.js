@@ -51,7 +51,7 @@ function App() {
     useEffect(() => {
         TECH_SYMBOLS.forEach(symbol => {
             if (reportBySymbol[symbol]) {
-               return;
+                return;
             }
             fetch(`reports/${symbol}.csv`)
                 .then(res => res.text())
@@ -61,13 +61,13 @@ function App() {
                     setReportBySymbol(prevState => ({ ...prevState, [symbol]: data }));
                 });
         })
-    // eslint-disable-next-line
+        // eslint-disable-next-line
     }, []);
 
     const onSortClick = by => {
         if (by === sortBy) {
             setIsAscend(!isAscend);
-        } else  {
+        } else {
             setSortBy(by);
             setIsAscend(false);
         }
@@ -80,30 +80,30 @@ function App() {
     return <div className="container">
         <h3 className="mb-3">Technology Sector</h3>
         <div className="table-responsive">
-        <table className="table">
-            <thead>
-                <tr>
-                    <th width={`${100 / 6}%`}>Symbol</th>
-                    <th width={`${100 / 6}%`} onClick={() => onSortClick('profitMargin')}>Profit Margin {sortIcon('profitMargin')}</th>
-                    <th width={`${100 / 6}%`} onClick={() => onSortClick('roe')}>Return on Equity {sortIcon('roe')}</th>
-                    <th width={`${100 / 6}%`} onClick={() => onSortClick('currentRatio')}>Current Ratio {sortIcon('currentRatio')}</th>
-                    <th width={`${100 / 6}%`} onClick={() => onSortClick('payoutRatio')}>Payout Ratio {sortIcon('payoutRatio')}</th>
-                    <th width={`${100 / 6}%`} onClick={() => onSortClick('dilutedEPS')}>Duluted EPS {sortIcon('dilutedEPS')}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {Object.keys(reportBySymbol).sort((a, b) => {
-                    const dataA = reportBySymbol[a]
-                    const dataB = reportBySymbol[b]
-                    const f = ratios[sortBy];
-                    const sign = isAscend ? -1 : 1;
-                    return sign * (d3.mean(f(dataB)) - d3.mean(f(dataA)))
-                }).map(symbol => {
-                    return <StockRow symbol={symbol} key={symbol} data={reportBySymbol[symbol]} />
-                })}
-            </tbody>
-        </table>
-    </div>
+            <table className="table">
+                <thead>
+                    <tr>
+                        <th width={`${100 / 6}%`}>Symbol</th>
+                        <th width={`${100 / 6}%`} onClick={() => onSortClick('profitMargin')}>Profit Margin {sortIcon('profitMargin')}</th>
+                        <th width={`${100 / 6}%`} onClick={() => onSortClick('roe')}>Return on Equity {sortIcon('roe')}</th>
+                        <th width={`${100 / 6}%`} onClick={() => onSortClick('currentRatio')}>Current Ratio {sortIcon('currentRatio')}</th>
+                        <th width={`${100 / 6}%`} onClick={() => onSortClick('payoutRatio')}>Payout Ratio {sortIcon('payoutRatio')}</th>
+                        <th width={`${100 / 6}%`} onClick={() => onSortClick('dilutedEPS')}>Duluted EPS {sortIcon('dilutedEPS')}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {Object.keys(reportBySymbol).sort((a, b) => {
+                        const dataA = reportBySymbol[a]
+                        const dataB = reportBySymbol[b]
+                        const f = ratios[sortBy];
+                        const sign = isAscend ? -1 : 1;
+                        return sign * (d3.mean(f(dataB)) - d3.mean(f(dataA)))
+                    }).map(symbol => {
+                        return <StockRow symbol={symbol} key={symbol} data={reportBySymbol[symbol]} />
+                    })}
+                </tbody>
+            </table>
+        </div>
     </div>
 }
 
