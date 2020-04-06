@@ -1,36 +1,33 @@
-import React, { Component, useEffect, useState } from "react";
-import Chart from 'react-apexcharts'
+import React, { useEffect, useState } from "react";
 import * as d3 from 'd3';
-import lodash from 'lodash';
-import { sparlineOptions } from "./constants";
+import { FaSortNumericDown, FaSortNumericUp } from "react-icons/fa";
 import symbolBySectors from "./symbolsBySector.json";
 
 const TECH_SYMBOLS = Array.from(new Set(symbolBySectors['technology']));
+const profitMargin = data => data.map(dat => (dat['annualNetIncome'] / dat['annualTotalRevenue'] * 100));
+const roe = data => data.map(dat => (dat['annualNetIncome'] / dat['annualStockholdersEquity'] * 100));
+const currentRatio = data => data.map(dat => (dat['annualCurrentAssets'] / dat['annualCurrentLiabilities']));
+const payoutRatio = data => data.map(dat => (-1 * dat['annualCashDividendsPaid'] / dat['annualNetIncome'] * 100));
+const dilutedEPS = data => data.map(dat => (dat['annualDilutedEPS'] || 0));
 
-class OurChart extends Component {
-    render() {
-        const { options, series, type = 'bar', width = 500, height = 320 } = this.props;
-        return (
-            <Chart options={options} series={series} type={type} width={width} height={height} />
-        )
-    }
+const ratios = {
+    profitMargin,
+    roe,
+    currentRatio,
+    payoutRatio,
+    dilutedEPS,
 }
+
 
 function StockRow({ symbol, data }) {
     if (data) {
-        const profit_margin = data.map(dat => (dat['annualNetIncome'] / dat['annualTotalRevenue'] * 100).toFixed(0));
-        const roe = data.map(dat => (dat['annualNetIncome'] / dat['annualStockholdersEquity'] * 100).toFixed(0));
-        const currentRatio = data.map(dat => (dat['annualCurrentAssets'] / dat['annualCurrentLiabilities']).toFixed(1));
-        const payoutRatio = data.map(dat => (-1 * dat['annualCashDividendsPaid'] / dat['annualNetIncome'] * 100).toFixed(0));
-        const dilutedEPS = data.map(dat => (dat['annualDilutedEPS'] || 0).toFixed(1));
-
         return <tr>
             <th>{symbol}</th>
-            <td><OurChart options={sparlineOptions} series={[{ data: profit_margin }]} height={'50px'} width={'100%'} /></td>
-            <td><OurChart options={sparlineOptions} series={[{ data: roe }]} height={'50px'} width={'100%'} /></td>
-            <td><OurChart options={sparlineOptions} series={[{ data: currentRatio }]} height={'50px'} width={'100%'} /></td>
-            <td><OurChart options={sparlineOptions} series={[{ data: payoutRatio }]} height={'50px'} width={'100%'} /></td>
-            <td><OurChart options={sparlineOptions} series={[{ data: dilutedEPS }]} height={'50px'} width={'100%'} /></td>
+            <td>{d3.mean(ratios.profitMargin(data)).toFixed(1)}</td>
+            <td>{d3.mean(ratios.roe(data)).toFixed(1)}</td>
+            <td>{d3.mean(ratios.currentRatio(data)).toFixed(1)}</td>
+            <td>{d3.mean(ratios.payoutRatio(data)).toFixed(1)}</td>
+            <td>{d3.mean(ratios.dilutedEPS(data)).toFixed(1)}</td>
         </tr>
     } else {
         return <tr>
@@ -45,36 +42,14 @@ function StockRow({ symbol, data }) {
 
 }
 
-function StockList({ reportBySymbol }) {
-    return <div className="table-responsive">
-        <table className="table">
-            <thead>
-                <tr>
-                    <th width={`${100 / 6}%`}>Symbol</th>
-                    <th width={`${100 / 6}%`}>Profit Margin</th>
-                    <th width={`${100 / 6}%`}>Return on Equity</th>
-                    <th width={`${100 / 6}%`}>Current Ratio</th>
-                    <th width={`${100 / 6}%`}>Payout Ratio</th>
-                    <th width={`${100 / 6}%`}>Duluted EPS</th>
-                </tr>
-            </thead>
-            <tbody>
-                {Object.keys(reportBySymbol).map(symbol => {
-                    return <StockRow symbol={symbol} key={symbol} data={reportBySymbol[symbol]} />
-                })}
-            </tbody>
-        </table>
-    </div>
-}
 
 function App() {
-    const [idx, setIdx] = useState(0);
     const [reportBySymbol, setReportBySymbol] = useState({});
-    const rowsPerPage = 10;
-    const symbols = idx => TECH_SYMBOLS.slice(idx * rowsPerPage, (idx + 1) * rowsPerPage);
+    const [sortBy, setSortBy] = useState('profitMargin');
+    const [isAscend, setIsAscend] = useState(false);
 
     useEffect(() => {
-        symbols(idx).forEach(symbol => {
+        TECH_SYMBOLS.forEach(symbol => {
             if (reportBySymbol[symbol]) {
                return;
             }
@@ -87,20 +62,48 @@ function App() {
                 });
         })
     // eslint-disable-next-line
-    }, [idx]);
+    }, []);
+
+    const onSortClick = by => {
+        if (by === sortBy) {
+            setIsAscend(!isAscend);
+        } else  {
+            setSortBy(by);
+            setIsAscend(false);
+        }
+    }
+
+    const sortIcon = by => by === sortBy ?
+        isAscend ? <FaSortNumericUp /> : <FaSortNumericDown /> :
+        null;
 
     return <div className="container">
         <h3 className="mb-3">Technology Sector</h3>
-        <StockList reportBySymbol={lodash.pick(reportBySymbol, symbols(idx))} />
-        <nav>
-            <ul className="pagination">
-                {[...Array(Math.ceil(TECH_SYMBOLS.length / 10))].map((_, i) =>
-                    <li key={`page-${i}`} className={`page-item ${i === idx && 'active'}`}>
-                        <span onClick={() => setIdx(i)} className="page-link">{i + 1}</span>
-                    </li>
-                )}
-            </ul>
-        </nav>
+        <div className="table-responsive">
+        <table className="table">
+            <thead>
+                <tr>
+                    <th width={`${100 / 6}%`}>Symbol</th>
+                    <th width={`${100 / 6}%`} onClick={() => onSortClick('profitMargin')}>Profit Margin {sortIcon('profitMargin')}</th>
+                    <th width={`${100 / 6}%`} onClick={() => onSortClick('roe')}>Return on Equity {sortIcon('roe')}</th>
+                    <th width={`${100 / 6}%`} onClick={() => onSortClick('currentRatio')}>Current Ratio {sortIcon('currentRatio')}</th>
+                    <th width={`${100 / 6}%`} onClick={() => onSortClick('payoutRatio')}>Payout Ratio {sortIcon('payoutRatio')}</th>
+                    <th width={`${100 / 6}%`} onClick={() => onSortClick('dilutedEPS')}>Duluted EPS {sortIcon('dilutedEPS')}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {Object.keys(reportBySymbol).sort((a, b) => {
+                    const dataA = reportBySymbol[a]
+                    const dataB = reportBySymbol[b]
+                    const f = ratios[sortBy];
+                    const sign = isAscend ? -1 : 1;
+                    return sign * (d3.mean(f(dataB)) - d3.mean(f(dataA)))
+                }).map(symbol => {
+                    return <StockRow symbol={symbol} key={symbol} data={reportBySymbol[symbol]} />
+                })}
+            </tbody>
+        </table>
+    </div>
     </div>
 }
 
