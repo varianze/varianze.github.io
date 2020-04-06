@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import * as d3 from 'd3';
+import lodash from 'lodash';
 import { FaSortNumericDown, FaSortNumericUp } from "react-icons/fa";
-import { Modal } from "react-bootstrap";
+import { Modal, Dropdown } from "react-bootstrap";
 import Plot from 'react-plotly.js';
 import moment from "moment";
-import symbolBySectors from "./symbolsBySector.json";
+import SYMBOL_SECTOR from "./symbolsBySector.json";
 
-const TECH_SYMBOLS = Array.from(new Set(symbolBySectors['technology']));
 const profitMargin = data => data.map(dat => (dat['annualNetIncome'] / dat['annualTotalRevenue'] * 100));
 const roe = data => data.map(dat => (dat['annualNetIncome'] / dat['annualStockholdersEquity'] * 100));
 const currentRatio = data => data.map(dat => (dat['annualCurrentAssets'] / dat['annualCurrentLiabilities']));
@@ -27,9 +27,12 @@ function App() {
     const [isAscend, setIsAscend] = useState(false);
     const [isModalShow, setShowModal] = useState(false);
     const [symbol, setSymbol] = useState(null);
+    const [sector, setSector] = useState('technology');
 
     useEffect(() => {
-        TECH_SYMBOLS.forEach(symbol => {
+        const symbols = getSymbols(sector);
+
+        symbols.forEach(symbol => {
             if (reportBySymbol[symbol]) {
                 return;
             }
@@ -41,7 +44,7 @@ function App() {
                 });
         })
         // eslint-disable-next-line
-    }, []);
+    }, [sector]);
 
     const onSortClick = by => {
         if (by === sortBy) {
@@ -65,8 +68,22 @@ function App() {
         setSymbol(symbol)
     }
 
-    return <div className="container">
-        <h3 className="mb-3">Technology Sector</h3>
+    return <div className="container mt-3">
+        <h3 className="mb-3 d-flex align-items-center">
+            Sector: <Dropdown className="ml-2">
+                <Dropdown.Toggle variant="success" id="dropdown-basic">
+                    {sector.toUpperCase()}
+                </Dropdown.Toggle>
+
+                <Dropdown.Menu>
+                    {Object.keys(SYMBOL_SECTOR).map(sec =>
+                        <Dropdown.Item key={sec} active={sec === sector} onClick={() => setSector(sec)}>
+                            {sec.toUpperCase()}
+                        </Dropdown.Item>
+                    )}
+                </Dropdown.Menu>
+            </Dropdown>
+        </h3>
         <div className="table-responsive">
             <table className="table">
                 <thead>
@@ -80,7 +97,7 @@ function App() {
                     </tr>
                 </thead>
                 <tbody>
-                    {Object.keys(reportBySymbol).sort((a, b) => {
+                    {Object.keys(lodash.pick(reportBySymbol, getSymbols(sector))).sort((a, b) => {
                         const dataA = reportBySymbol[a]
                         const dataB = reportBySymbol[b]
                         const f = ratios[sortBy];
@@ -165,9 +182,9 @@ function RatioPlot({
     title,
     key1, name1,
     key2, name2,
-    factor=100,
-    key1factor=1,
-    y2range=[0, 100]
+    factor = 100,
+    key1factor = 1,
+    y2range = [0, 100]
 }) {
     const dates = report.map(dat => moment(dat['date']).year());
 
@@ -193,12 +210,16 @@ function RatioPlot({
             }
         ]}
         useResizeHandler
-        style={{width: '100%',  height: '100%'}}
+        style={{ width: '100%', height: '100%' }}
         layout={{
             autosize: true,
             title,
             yaxis2: { overlaying: 'y', side: 'right', range: y2range },
-            legend: {"orientation": "h"}
+            legend: { "orientation": "h" }
         }}
     />
+}
+
+function getSymbols(sector) {
+    return Array.from(new Set(SYMBOL_SECTOR[sector]));
 }
