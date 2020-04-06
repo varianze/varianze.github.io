@@ -108,7 +108,7 @@ function App() {
                         data = data.slice(data.length - 5 + 1, data.length)
                         if (data) {
                             return <tr key={symbol}>
-                                <th onClick={() => showStockModal(symbol)}>{symbol}</th>
+                                <th><button className="btn btn-link btn-small p-0" onClick={() => showStockModal(symbol)}>{symbol}</button></th>
                                 <td>{mean(ratios.profitMargin(data))}</td>
                                 <td>{mean(ratios.roe(data))}</td>
                                 <td>{mean(ratios.currentRatio(data))}</td>
