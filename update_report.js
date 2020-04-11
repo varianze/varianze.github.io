@@ -5,6 +5,15 @@ const moment = require('moment')
 const readFile = util.promisify(fs.readFile)
 const YEAR = 2019
 
+main()
+
+function main() {
+    fs.readFile('./symbols.json', (err, buffer) => {
+        const symbols = JSON.parse(buffer.toString())
+        updateReports(symbols);
+    })
+}
+
 function updateReports(symbols) {
     symbols.forEach(symbol => {
         const row = extractLatestRow(symbol)
