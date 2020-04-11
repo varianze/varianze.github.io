@@ -17,8 +17,9 @@ function main() {
 function updateReports(symbols) {
     symbols.forEach(symbol => {
         const row = extractLatestRow(symbol)
-        const csvString = makeNewCsvReport(symbol, row)
-        fs.writeFile(`./public/reports/${symbol}.csv`, csvString, (err) => console.log(err))
+        makeNewCsvReport(symbol, row).then(csvString => {
+            fs.writeFile(`./public/reports/${symbol}.csv`, csvString, (err) => console.log(err))
+        })
     })
 }
 
@@ -52,7 +53,9 @@ function makeNewCsvReport(symbol, row) {
 function findSymbols() {
     // Read csv files from ./public/reports,
     fs.readdir('./public/reports', (err, fnames) => {
-        const csv_files = fnames.filter(fname => fname.endsWith('.csv')).filter(fname => !fname.includes('HK'))
+        const csv_files = fnames.filter(fname => fname.endsWith('.csv'))
+            .filter(fname => !fname.includes('HK'))
+            .filter(fname => !fname.includes('.H'))
         const prs = csv_files.map(fname => readFile(`./public/reports/${fname}`)
             .then(buffer => buffer.toString())
             .then(csvString => d3.csvParse(csvString, d3.autoType)))
