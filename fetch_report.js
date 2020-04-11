@@ -93,3 +93,26 @@ function downloadJson(json, fname) {
     anchor.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(json));
     anchor.click()
 }
+
+function checkMissing() {
+    fs.readFile('./symbols.json', (err, buffer) => symbols = JSON.parse(buffer.toString()))
+    fs.readdir('/Users/richardng/Downloads', (err, fnames) => {
+        const json_files = fnames.filter(fname => fname.endsWith('.json'))
+        const missing = symbols.filter(sym => !json_files.includes(`${sym}.json`))
+        console.log(missing.length);
+
+        fs.writeFile('missing.json', JSON.stringify(missing), (err) => console.log(err))
+    })
+}
+
+i = 0
+interval = setInterval(() => {
+    const batch_size = 10
+    if (i * batch_size > symbols.length) {
+        clearInterval(interval)
+        return
+    }
+    console.log(i)
+    symbols.slice(i * batch_size, (i + 1) * batch_size).forEach(symbol => fetchReport(symbol))
+    i += 1
+}, 5000)
