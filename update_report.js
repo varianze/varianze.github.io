@@ -15,11 +15,10 @@ function main() {
 }
 
 function updateReports(symbols) {
-    symbols.forEach(symbol => {
-        const row = extractLatestRow(symbol)
-        makeNewCsvReport(symbol, row).then(csvString => {
-            fs.writeFile(`./public/reports/${symbol}.csv`, csvString, (err) => console.log(err))
-        })
+    symbols.forEach(async (symbol) => {
+        const row = await extractLatestRow(symbol)
+        const csvString = await makeNewCsvReport(symbol, row)
+        fs.writeFile(`./public/reports/${symbol}.csv`, csvString, (err) => console.log(err))
     })
 }
 
