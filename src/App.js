@@ -22,8 +22,7 @@ function App() {
                 let data = d3.csvParse(csvString, d3.autoType);
                 setReportBySymbol(prevState => ({ ...prevState, [symbol]: data }));
             });
-    // eslint-disable-next-line
-    }, [symbol]);
+    }, [symbol, reportBySymbol]);
 
     return <div className="container mt-3">
         <Autocomplete
