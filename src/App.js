@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import * as d3 from 'd3';
 import Plot from 'react-plotly.js';
 import moment from "moment";
 import SYMBOLS_raw from "./symbols.json";
-import { TextField } from "@material-ui/core";
-import { Autocomplete } from "@material-ui/lab";
+import symbolsBySector from "./symbolsBySector.json";
+import TextField from "@material-ui/core/TextField";
+import Autocomplete from "@material-ui/lab/Autocomplete";
 
 const SYMBOLS = SYMBOLS_raw.filter(sym => !sym.includes("."))
 
@@ -24,6 +25,20 @@ function App() {
             });
     }, [symbol, reportBySymbol]);
 
+    const sector = useMemo(() => {
+        console.log('cal sector');
+
+        let result;
+        Object.keys(symbolsBySector).some(sec => {
+            if (symbolsBySector[sec].includes(symbol)) {
+                result = sec;
+                return true;
+            }
+            return false;
+        })
+        return result;
+    }, [symbol]);
+
     return <div className="container mt-3">
         <Autocomplete
             className="mb-3"
@@ -32,6 +47,7 @@ function App() {
             value={symbol}
             onChange={(_, val) => setSymbol(val)}
         />
+        <h3><span className="badge badge-secondary">{sector}</span></h3>
         {reportBySymbol[symbol] ? <>
             <RatioPlot
                 report={reportBySymbol[symbol]}
