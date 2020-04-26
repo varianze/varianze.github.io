@@ -39,6 +39,8 @@ function App() {
         return result;
     }, [symbol]);
 
+    const report = reportBySymbol[symbol];
+
     return <div className="container mt-3">
         <Autocomplete
             className="mb-3"
@@ -48,9 +50,9 @@ function App() {
             onChange={(_, val) => setSymbol(val)}
         />
         <h3><span className="badge badge-secondary">{sector}</span></h3>
-        {reportBySymbol[symbol] ? <>
+        {report ? <>
             <RatioPlot
-                report={reportBySymbol[symbol]}
+                report={report}
                 title="Profit Margin"
                 key1="annualNetIncome"
                 name1="Net Income"
@@ -58,7 +60,7 @@ function App() {
                 name2="Total Revenue"
             />
             <RatioPlot
-                report={reportBySymbol[symbol]}
+                report={report}
                 title="Return On Assets"
                 key1="annualNetIncome"
                 name1="Net Income"
@@ -66,7 +68,7 @@ function App() {
                 name2="Total Assets"
             />
             <RatioPlot
-                report={reportBySymbol[symbol]}
+                report={report}
                 title="Current Ratio"
                 key1="annualCurrentAssets"
                 name1="Current Assets"
@@ -76,7 +78,7 @@ function App() {
                 y2range={[0, 5]}
             />
             <RatioPlot
-                report={reportBySymbol[symbol]}
+                report={report}
                 title="Payout Ratio"
                 key1="annualCashDividendsPaid"
                 name1="Cash Dividends Paid"
@@ -86,8 +88,8 @@ function App() {
             />
             <Plot
                 data={[{
-                    x: reportBySymbol[symbol].map(dat => moment(dat['date']).year()),
-                    y: reportBySymbol[symbol].map(dat => dat['annualFreeCashFlow']),
+                    x: report.map(dat => moment(dat['date']).year()),
+                    y: report.map(dat => dat['annualFreeCashFlow']),
                 }]}
                 useResizeHandler
                 style={{ width: '100%', height: '100%' }}
