@@ -5,21 +5,13 @@ const moment = require('moment')
 const readFile = util.promisify(fs.readFile)
 const YEAR = 2019
 
-main()
+const symbol = 'NGVT';
+updateReport(symbol);
 
-function main() {
-    fs.readFile('./symbols.json', (err, buffer) => {
-        const symbols = JSON.parse(buffer.toString())
-        updateReports(symbols);
-    })
-}
-
-function updateReports(symbols) {
-    symbols.forEach(async (symbol) => {
-        const row = await extractLatestRow(symbol)
-        const csvString = await makeNewCsvReport(symbol, row)
-        fs.writeFile(`./public/reports/${symbol}.csv`, csvString, (err) => console.log(err))
-    })
+async function updateReport(symbol) {
+    const row = await extractLatestRow(symbol)
+    const csvString = await mergeCsvLastRow(symbol, row)
+    fs.writeFile(`./public/reports/${symbol}.csv`, csvString, (err) => console.log(err))
 }
 
 function extractLatestRow(symbol) {
@@ -40,10 +32,10 @@ function extractLatestRow(symbol) {
     })
 }
 
-function makeNewCsvReport(symbol, row) {
+function mergeCsvLastRow(symbol, lastRow) {
     return readFile(`./public/reports/${symbol}.csv`).then((buffer) => {
         const report = d3.csvParse(buffer.toString(), d3.autoType)
-        report.push(row)
+        report.push({...report.pop(), ...lastRow})
         const csvString = d3.csvFormat(report)
         return csvString
     })
