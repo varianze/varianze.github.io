@@ -84,6 +84,15 @@ function App() {
                 name2="Net Income"
                 key1factor={-1}
             />
+            <Plot
+                data={[{
+                    x: reportBySymbol[symbol].map(dat => moment(dat['date']).year()),
+                    y: reportBySymbol[symbol].map(dat => dat['annualFreeCashFlow']),
+                }]}
+                useResizeHandler
+                style={{ width: '100%', height: '100%' }}
+                layout={{ autosize: true, title: 'Free Cash Flow' }}
+            />
         </> : <p>Loading...</p>}
     </div>
 }
@@ -127,7 +136,6 @@ function RatioPlot({
         layout={{
             autosize: true,
             title,
-            xaxis: { type: 'date' },
             yaxis2: { overlaying: 'y', side: 'right', range: y2range },
             legend: { "orientation": "h" }
         }}
