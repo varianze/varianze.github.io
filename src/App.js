@@ -59,6 +59,31 @@ function App() {
                 key2="annualTotalRevenue"
                 name2="Total Revenue"
             />
+            <Plot
+                data={[
+                    {
+                        x: report.map(dat => moment(dat['date']).year()),
+                        y: report.map(dat => dat['annualStockholdersEquity']),
+                        type: 'bar',
+                        name: 'annualStockholdersEquity',
+                    },
+                    {
+                        x: report.map(dat => moment(dat['date']).year()),
+                        y: report.map(dat => dat['annualTotalLiabilitiesNetMinorityInterest']),
+                        type: 'bar',
+                        name: 'annualTotalLiabilitiesNetMinorityInterest',
+                    },
+                    {
+                        x: report.map(dat => moment(dat['date']).year()),
+                        y: report.map(dat => dat['annualTotalAssets']),
+                        type: 'bar',
+                        name: 'annualTotalAssets',
+                    },
+                ]}
+                useResizeHandler
+                style={{ width: '100%', height: '100%' }}
+                layout={{ autosize: true, legend: { "orientation": "h" }, title: 'Asset, Liability & Equity' }}
+            />
             <RatioPlot
                 report={report}
                 title="Return On Assets"
