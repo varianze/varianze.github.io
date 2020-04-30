@@ -12,22 +12,28 @@ const SYMBOLS = SYMBOLS_raw.filter(sym => !sym.includes("."))
 function App() {
     const [symbol, setSymbol] = useState('MSFT');
     const [reportBySymbol, setReportBySymbol] = useState({});
+    const [priceBySymbol, setPriceBySymbol] = useState({});
 
     useEffect(() => {
-        if (reportBySymbol[symbol]) {
-            return;
-        }
-        fetch(`reports/${symbol}.csv`)
+        if (typeof reportBySymbol[symbol] === 'undefined') {
+            fetch(`reports/${symbol}.csv`)
             .then(res => res.text())
             .then(csvString => {
                 let data = d3.csvParse(csvString, d3.autoType);
                 setReportBySymbol(prevState => ({ ...prevState, [symbol]: data }));
             });
-    }, [symbol, reportBySymbol]);
+        }
+        if (typeof priceBySymbol[symbol] === 'undefined') {
+            fetch(`prices/${symbol}.csv`)
+            .then(res => res.text())
+            .then(csvString => {
+                let data = d3.csvParse(csvString, d3.autoType);
+                setPriceBySymbol(prevState => ({ ...prevState, [symbol]: data }));
+            });
+        }
+    }, [symbol, reportBySymbol, priceBySymbol]);
 
     const sector = useMemo(() => {
-        console.log('cal sector');
-
         let result;
         Object.keys(symbolsBySector).some(sec => {
             if (symbolsBySector[sec].includes(symbol)) {
@@ -40,6 +46,8 @@ function App() {
     }, [symbol]);
 
     const report = reportBySymbol[symbol];
+    const price = priceBySymbol[symbol] || [];
+    console.log(price);
 
     return <div className="container mt-3">
         <Autocomplete
@@ -51,6 +59,18 @@ function App() {
         />
         <h3><span className="badge badge-secondary">{sector}</span></h3>
         {report ? <>
+            <Plot
+                data={[
+                    {
+                        x: price.map(dat => dat['Adj Close']),
+                        type: 'histogram'
+                    }
+                ]}
+                useResizeHandler
+                style={{ width: '100%', height: '100%' }}
+                layout={{ autosize: true, legend: { "orientation": "h" },
+                    title: 'Price Distribution' }}
+            />
             <RatioPlot
                 report={report}
                 title="Profit Margin"
