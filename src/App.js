@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import * as d3 from 'd3';
 import Plot from 'react-plotly.js';
 import moment from "moment";
@@ -19,6 +19,15 @@ function App() {
     const [priceBySymbol, setPriceBySymbol] = useState({});
     const [priceFrom, setPriceFrom] = useState('')
     const [priceTo, setPriceTo] = useState('')
+    let fileInput;
+
+    const updatePriceBySymbol = useCallback(csvString => {
+        let data = d3.csvParse(csvString, d3.autoType);
+        setPriceBySymbol(prevState => ({ ...prevState, [symbol]: data }));
+        const years = Array.from((new Set(data.map(p => moment(p['Date']).year()))))
+        setPriceFrom(years[0])
+        setPriceTo(years.slice(years.length - 1)[0])
+    }, [symbol]);
 
     useEffect(() => {
         if (typeof reportBySymbol[symbol] === 'undefined') {
@@ -31,18 +40,12 @@ function App() {
         }
         if (typeof priceBySymbol[symbol] === 'undefined') {
             axios.get(`prices/${symbol}.csv`)
-                .then(res => {
-                    let data = d3.csvParse(res.data, d3.autoType);
-                    setPriceBySymbol(prevState => ({ ...prevState, [symbol]: data }));
-                    const years = Array.from((new Set(data.map(p => moment(p['Date']).year()))))
-                    setPriceFrom(years[0])
-                    setPriceTo(years.slice(years.length - 1)[0])
-                })
+                .then(res => updatePriceBySymbol(res.data))
                 .catch(error => {
                     return;
                 });
         }
-    }, [symbol, reportBySymbol, priceBySymbol]);
+    }, [symbol, reportBySymbol, priceBySymbol, updatePriceBySymbol]);
 
     const sector = useMemo(() => {
         let result;
@@ -112,7 +115,29 @@ function App() {
                     layout={{ autosize: true, legend: { "orientation": "h" },
                         title: 'Price Distribution' }}
                 /> :
-                <p className="mb-3">Price Data not available yet</p>}
+                <div className="mt-5 mb-5 text-center">
+                    <p>Price Data not available yet</p>
+                    <input type="file" style={{display: 'none'}} ref={node => fileInput = node}
+                        onChange={(e) => {
+                            const f = e.target.files[0];
+                            if (f) {
+                                var r = new FileReader();
+                                r.onload = function(e) {
+                                    var contents = e.target.result;
+                                    updatePriceBySymbol(contents);
+                               }
+                                r.readAsText(f);
+                              } else {
+                                alert("Failed to load file");
+                              }
+                        }}
+                        value=''
+                        accept='text/csv'
+                    />
+                    <button className="btn btn-secondary" onClick={() => fileInput.click()}>
+                        Upload Csv to Visualize
+                    </button>
+                </div>}
             <RatioPlot
                 report={report}
                 title="Profit Margin"
