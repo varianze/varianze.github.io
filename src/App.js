@@ -6,6 +6,9 @@ import SYMBOLS_raw from "./symbols.json";
 import symbolsBySector from "./symbolsBySector.json";
 import TextField from "@material-ui/core/TextField";
 import Autocomplete from "@material-ui/lab/Autocomplete";
+import Select from '@material-ui/core/Select';
+import FormControl from '@material-ui/core/FormControl';
+import MenuItem from '@material-ui/core/MenuItem';
 
 const SYMBOLS = SYMBOLS_raw.filter(sym => !sym.includes("."))
 
@@ -13,6 +16,8 @@ function App() {
     const [symbol, setSymbol] = useState('MSFT');
     const [reportBySymbol, setReportBySymbol] = useState({});
     const [priceBySymbol, setPriceBySymbol] = useState({});
+    const [priceFrom, setPriceFrom] = useState('')
+    const [priceTo, setPriceTo] = useState('')
 
     useEffect(() => {
         if (typeof reportBySymbol[symbol] === 'undefined') {
@@ -29,6 +34,9 @@ function App() {
             .then(csvString => {
                 let data = d3.csvParse(csvString, d3.autoType);
                 setPriceBySymbol(prevState => ({ ...prevState, [symbol]: data }));
+                const years = Array.from((new Set(data.map(p => moment(p['Date']).year()))))
+                setPriceFrom(years[0])
+                setPriceTo(years.slice(years.length - 1)[0])
             });
         }
     }, [symbol, reportBySymbol, priceBySymbol]);
@@ -47,7 +55,17 @@ function App() {
 
     const report = reportBySymbol[symbol];
     const price = priceBySymbol[symbol] || [];
-    console.log(price);
+    const years = useMemo(() => Array.from(
+            new Set(price
+                .map(p => moment(p['Date']).year())
+            )
+        ),
+        [price]
+    );
+    const selectedPrices = useMemo(() => price
+        .filter(dat => moment(dat['Date']).year() >= priceFrom && moment(dat['Date']).year() <= priceTo)
+        .map(dat => dat['Adj Close'])
+    , [price, priceFrom, priceTo]);
 
     return <div className="container mt-3">
         <Autocomplete
@@ -58,11 +76,29 @@ function App() {
             onChange={(_, val) => setSymbol(val)}
         />
         <h3><span className="badge badge-secondary">{sector}</span></h3>
+        {
+            price ?
+            <div className="d-flex align-items-center">
+                <span className="mr-1">Prices From</span>
+                <FormControl variant='outlined'>
+                    <Select value={priceFrom} onChange={e => setPriceFrom(e.target.value)}>
+                        {years.map(year => <MenuItem key={year} value={year}>{year}</MenuItem>)}
+                    </Select>
+                </FormControl>
+                <span className="ml-2 mr-1">To</span>
+                <FormControl variant='outlined'>
+                    <Select value={priceTo} onChange={e => setPriceTo(e.target.value)}>
+                        {years.map(year => <MenuItem key={year} value={year}>{year}</MenuItem>)}
+                    </Select>
+                </FormControl>
+            </div> :
+            <p>Loading...</p>
+        }
         {report ? <>
             <Plot
                 data={[
                     {
-                        x: price.map(dat => dat['Adj Close']),
+                        x: selectedPrices,
                         type: 'histogram'
                     }
                 ]}
