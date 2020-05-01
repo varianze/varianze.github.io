@@ -94,6 +94,7 @@ function App() {
                         {years.map(year => <MenuItem key={year} value={year}>{year}</MenuItem>)}
                     </Select>
                 </FormControl>
+                <span className="ml-2">({selectedPrices.length} Trading Days)</span>
             </div> :
             <p>Loading...</p>
         }
