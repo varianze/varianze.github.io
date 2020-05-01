@@ -9,6 +9,7 @@ import Autocomplete from "@material-ui/lab/Autocomplete";
 import Select from '@material-ui/core/Select';
 import FormControl from '@material-ui/core/FormControl';
 import MenuItem from '@material-ui/core/MenuItem';
+import axios from 'axios';
 
 const SYMBOLS = SYMBOLS_raw.filter(sym => !sym.includes("."))
 
@@ -29,15 +30,17 @@ function App() {
             });
         }
         if (typeof priceBySymbol[symbol] === 'undefined') {
-            fetch(`prices/${symbol}.csv`)
-            .then(res => res.text())
-            .then(csvString => {
-                let data = d3.csvParse(csvString, d3.autoType);
-                setPriceBySymbol(prevState => ({ ...prevState, [symbol]: data }));
-                const years = Array.from((new Set(data.map(p => moment(p['Date']).year()))))
-                setPriceFrom(years[0])
-                setPriceTo(years.slice(years.length - 1)[0])
-            });
+            axios.get(`prices/${symbol}.csv`)
+                .then(res => {
+                    let data = d3.csvParse(res.data, d3.autoType);
+                    setPriceBySymbol(prevState => ({ ...prevState, [symbol]: data }));
+                    const years = Array.from((new Set(data.map(p => moment(p['Date']).year()))))
+                    setPriceFrom(years[0])
+                    setPriceTo(years.slice(years.length - 1)[0])
+                })
+                .catch(error => {
+                    return;
+                });
         }
     }, [symbol, reportBySymbol, priceBySymbol]);
 
@@ -95,18 +98,20 @@ function App() {
             <p>Loading...</p>
         }
         {report ? <>
-            <Plot
-                data={[
-                    {
-                        x: selectedPrices,
-                        type: 'histogram'
-                    }
-                ]}
-                useResizeHandler
-                style={{ width: '100%', height: '100%' }}
-                layout={{ autosize: true, legend: { "orientation": "h" },
-                    title: 'Price Distribution' }}
-            />
+            {price.length ?
+                <Plot
+                    data={[
+                        {
+                            x: selectedPrices,
+                            type: 'histogram'
+                        }
+                    ]}
+                    useResizeHandler
+                    style={{ width: '100%', height: '100%' }}
+                    layout={{ autosize: true, legend: { "orientation": "h" },
+                        title: 'Price Distribution' }}
+                /> :
+                <p className="mb-3">Price Data not available yet</p>}
             <RatioPlot
                 report={report}
                 title="Profit Margin"
